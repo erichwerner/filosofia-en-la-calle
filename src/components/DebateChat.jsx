@@ -2,17 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { obtenerTurnoFilosofos, parsearRespuestaFilosofos } from '../services/debateService';
 
 export default function DebateChat({ capituloId, temaCapitulo, respuestaInicialEstudiante }) {
-  // Historial global de mensajes en la bancada central y textos actuales de los filósofos
-  const [historialCentral, setHistorialCentral] = useState([
-    { remitente: 'estudiante-inicial', texto: respuestaInicialEstudiante }
+  // Historiales separados para conservar el hilo histórico en cada columna
+  const [mensajesKant, setMensajesKant] = useState([]);
+  const [mensajesMill, setMensajesMill] = useState([]);
+  const [historialEstudiante, setHistorialEstudiante] = useState([
+    { tipo: 'inicial', texto: respuestaInicialEstudiante }
   ]);
   
-  const [dialogoKant, setDialogoKant] = useState("Iniciando análisis deontológico...");
-  const [dialogoMill, setDialogoMill] = useState("Preparando cálculo utilitarista...");
-  
   const [inputUsuario, setInputUsuario] = useState('');
-  const [cargando, setCargando] = useState(false);
-  const scrollCentralRef = useRef(null);
+  const [cargando,setCargando] = useState(false);
+  
+  // Referencias para auto-scroll independiente en cada columna
+  const scrollKantRef = useRef(null);
+  const scrollMillRef = useRef(null);
+  const scrollEstudianteRef = useRef(null);
 
   // Efecto de apertura automática al entrar al capítulo
   useEffect(() => {
@@ -22,8 +25,8 @@ export default function DebateChat({ capituloId, temaCapitulo, respuestaInicialE
         const respuestaCruda = await obtenerTurnoFilosofos(temaCapitulo, respuestaInicialEstudiante, []);
         const { kantTexto, millTexto } = parsearRespuestaFilosofos(respuestaCruda);
         
-        setDialogoKant(kantTexto);
-        setDialogoMill(millTexto);
+        setMensajesKant([kantTexto]);
+        setMensajesMill([millTexto]);
       } catch (error) {
         console.error("Error al conectar con la API de Gemini:", error);
       } finally {
@@ -34,35 +37,39 @@ export default function DebateChat({ capituloId, temaCapitulo, respuestaInicialE
     dispararApertura();
   }, [capituloId, temaCapitulo, respuestaInicialEstudiante]);
 
-  // Autoscroll en el ágora del estudiante
+  // Mantener el scroll al final en las columnas
   useEffect(() => {
-    scrollCentralRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [historialCentral, cargando]);
+    scrollKantRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollMillRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollEstudianteRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [mensajesKant, mensajesMill, historialEstudiante, cargando]);
 
   // Enviar réplica del estudiante
   const manejarEnvio = async (e) => {
     e.preventDefault();
     if (!inputUsuario.trim() || cargando) return;
 
-    const nuevaIntervencion = { remitente: 'usuario', texto: inputUsuario };
-    const nuevoHistorial = [...historialCentral, nuevaIntervencion];
+    const nuevaIntervencionEstudiante = { tipo: 'replica', texto: inputUsuario };
+    const nuevoHistorialEstudiante = [...historialEstudiante, nuevaIntervencionEstudiante];
     
-    setHistorialCentral(nuevoHistorial);
+    setHistorialEstudiante(nuevoHistorialEstudiante);
     setInputUsuario('');
     setCargando(true);
 
     try {
-      // Mapear historial para la IA
-      const historialFormateado = nuevoHistorial.map(m => ({
-        role: m.remitente === 'usuario' ? 'user' : 'model',
+      // Construir historial unificado para que la IA entienda el contexto completo
+      // Mapeamos combinando las bancadas o enviando el flujo conversacional general
+      const historialFormateado = nuevoHistorialEstudiante.map(m => ({
+        role: 'user',
         content: m.texto
       }));
 
       const respuestaCruda = await obtenerTurnoFilosofos(temaCapitulo, respuestaInicialEstudiante, historialFormateado);
       const { kantTexto, millTexto } = parsearRespuestaFilosofos(respuestaCruda);
 
-      setDialogoKant(kantTexto);
-      setDialogoMill(millTexto);
+      // Acumulamos los nuevos mensajes en los historiales de cada filósofo
+      setMensajesKant(prev => [...prev, kantTexto]);
+      setMensajesMill(prev => [...prev, millTexto]);
 
     } catch (error) {
       console.error("Error en el intercambio:", error);
@@ -80,43 +87,53 @@ export default function DebateChat({ capituloId, temaCapitulo, respuestaInicialE
         <p className="text-xs text-gray-400">{temaCapitulo}</p>
       </header>
 
-      {/* Grid de Tres Bancadas */}
+      {/* Grid de Tres Bancadas en Columnas Independientes */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
         
-        {/* 1. BANCADA IZQUIERDA: Immanuel Kant */}
+        {/* 1. BANCADA IZQUIERDA: Immanuel Kant (Historial Acumulativo) */}
         <div className="bg-gray-900 border border-indigo-500/30 rounded-2xl p-4 flex flex-col shadow-xl overflow-hidden">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-800">
             <div className="w-3 h-3 rounded-full bg-indigo-500 animate-pulse"></div>
             <h2 className="font-bold text-indigo-300 text-sm tracking-wide">Immanuel Kant</h2>
           </div>
-          <div className="flex-1 overflow-y-auto pr-1">
-            <div className="bg-indigo-950/20 border border-indigo-500/20 p-4 rounded-xl text-sm leading-relaxed text-indigo-100 whitespace-pre-line">
-              {cargando ? <span className="animate-pulse text-indigo-400">Formulando imperativo...</span> : dialogoKant}
-            </div>
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+            {mensajesKant.map((msg, idx) => (
+              <div key={idx} className="bg-indigo-950/20 border border-indigo-500/20 p-3 rounded-xl text-sm leading-relaxed text-indigo-100 whitespace-pre-line">
+                {msg}
+              </div>
+            ))}
+            {cargando && idx === mensajesKant.length - 1 && (
+              <div className="text-xs text-indigo-400 italic animate-pulse">Kant está replicando...</div>
+            )}
+            <div ref={scrollKantRef} />
           </div>
         </div>
 
-        {/* 2. BANCADA CENTRAL: El Estudiante y su Ágora */}
+        {/* 2. BANCADA CENTRAL: El Estudiante y su Ágora (Historial Acumulativo) */}
         <div className="bg-gray-900 border border-amber-500/30 rounded-2xl p-4 flex flex-col shadow-xl overflow-hidden">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-800">
             <div className="w-3 h-3 rounded-full bg-amber-500"></div>
             <h2 className="font-bold text-amber-300 text-sm tracking-wide">Tu Ágora (Estudiante)</h2>
           </div>
           
-          {/* Historial de la bancada central */}
+          {/* Historial central del alumno */}
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            <div className="bg-amber-950/30 border border-amber-500/20 p-3 rounded-xl text-xs">
-              <span className="text-amber-400 font-semibold block mb-1">Tu postura inicial (A ciegas):</span>
-              <p className="italic text-amber-100">"{respuestaInicialEstudiante}"</p>
-            </div>
-
-            {historialCentral.filter(m => m.remitente === 'usuario').map((msg, idx) => (
-              <div key={idx} className="bg-blue-950/40 border border-blue-500/30 p-3 rounded-xl text-xs ml-4">
-                <span className="text-blue-400 font-semibold block mb-1">Tu réplica:</span>
-                <p className="text-blue-100">{msg.texto}</p>
+            {historialEstudiante.map((item, idx) => (
+              <div 
+                key={idx} 
+                className={`p-3 rounded-xl text-xs ${
+                  item.tipo === 'inicial' 
+                    ? 'bg-amber-950/30 border border-amber-500/20 text-amber-100' 
+                    : 'bg-blue-950/40 border border-blue-500/30 text-blue-100 ml-4'
+                }`}
+              >
+                <span className={`font-semibold block mb-1 ${item.tipo === 'inicial' ? 'text-amber-400' : 'text-blue-400'}`}>
+                  {item.tipo === 'inicial' ? 'Tu postura inicial (A ciegas):' : 'Tu réplica:'}
+                </span>
+                <p className={item.tipo === 'inicial' ? 'italic' : ''}>"{item.texto}"</p>
               </div>
             ))}
-            <div ref={scrollCentralRef} />
+            <div ref={scrollEstudianteRef} />
           </div>
 
           {/* Caja de entrada central */}
@@ -139,16 +156,22 @@ export default function DebateChat({ capituloId, temaCapitulo, respuestaInicialE
           </form>
         </div>
 
-        {/* 3. BANCADA DERECHA: John Stuart Mill */}
+        {/* 3. BANCADA DERECHA: John Stuart Mill (Historial Acumulativo) */}
         <div className="bg-gray-900 border border-emerald-500/30 rounded-2xl p-4 flex flex-col shadow-xl overflow-hidden">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-800">
             <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
             <h2 className="font-bold text-emerald-300 text-sm tracking-wide">John Stuart Mill</h2>
           </div>
-          <div className="flex-1 overflow-y-auto pr-1">
-            <div className="bg-emerald-950/20 border border-emerald-500/20 p-4 rounded-xl text-sm leading-relaxed text-emerald-100 whitespace-pre-line">
-              {cargando ? <span className="animate-pulse text-emerald-400">Calculando utilidad general...</span> : dialogoMill}
-            </div>
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+            {mensajesMill.map((msg, idx) => (
+              <div key={idx} className="bg-emerald-950/20 border border-emerald-500/20 p-3 rounded-xl text-sm leading-relaxed text-emerald-100 whitespace-pre-line">
+                {msg}
+              </div>
+            ))}
+            {cargando && (
+              <div className="text-xs text-emerald-400 italic animate-pulse">Mill está calculando utilidad...</div>
+            )}
+            <div ref={scrollMillRef} />
           </div>
         </div>
 

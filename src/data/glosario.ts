@@ -27,7 +27,9 @@ import { capitulo25 } from './capitulos/capitulo25';
 import { capitulo26 } from './capitulos/capitulo26';
 import { capitulo27 } from './capitulos/capitulo27';
 import { capitulo28 } from './capitulos/capitulo28';
-// Y añadir ...capitulo6 al array GLOSARIO_FILOSOFICO
+
+// Exportar explícitamente el tipo requerido por ModalReferencia
+export type { TerminoGlosario };
 
 export const GLOSARIO_FILOSOFICO: TerminoGlosario[] = [
   ...capitulo1,
