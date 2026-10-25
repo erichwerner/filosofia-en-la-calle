@@ -2,6 +2,7 @@ interface LectorVozProps {
   texto: string;
 }
 
+
 export default function LectorVoz({ texto }: LectorVozProps) {
   const leerTexto = () => {
     if (!('speechSynthesis' in window)) {
@@ -24,7 +25,6 @@ export default function LectorVoz({ texto }: LectorVozProps) {
     }
   };
 
-  
   return (
     <div className="flex gap-2 my-2">
       <button
