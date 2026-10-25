@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAppStore } from './store';
 import { CHAPTER_NODES } from './data/chapters';
-import { LectorVoz } from './components/LectorVoz';
+import LectorVoz from './components/LectorVoz';
 import TextoEnriquecido from './components/TextoEnriquecido';
 import ModalReferencia from './components/ModalReferencia';
 import SelectorCapitulos from './components/SelectorCapitulos';
