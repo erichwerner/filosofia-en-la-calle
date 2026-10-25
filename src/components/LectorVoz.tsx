@@ -24,6 +24,7 @@ export default function LectorVoz({ texto }: LectorVozProps) {
     }
   };
 
+  
   return (
     <div className="flex gap-2 my-2">
       <button
