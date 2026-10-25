@@ -195,4 +195,5 @@ export default function PhilosophyChatApp() {
       )}
     </div>
   );
-}
+}/ /   F o r z a r   a c t u a l i z a c i o n  
+ 
