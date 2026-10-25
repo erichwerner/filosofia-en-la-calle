@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAppStore } from './store';
 import { CHAPTER_NODES } from './data/chapters';
-import LectorVoz from './components/LectorVoz';
+import { LectorVoz } from './components/LectorVoz';
 import TextoEnriquecido from './components/TextoEnriquecido';
 import ModalReferencia from './components/ModalReferencia';
 import SelectorCapitulos from './components/SelectorCapitulos';
@@ -195,5 +195,4 @@ export default function PhilosophyChatApp() {
       )}
     </div>
   );
-}/ /   F o r z a r   a c t u a l i z a c i o n  
- 
+}
