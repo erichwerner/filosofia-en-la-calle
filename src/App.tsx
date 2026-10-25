@@ -19,7 +19,7 @@ export default function PhilosophyChatApp() {
   const [showChat, setShowChat] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [referenciaAbierta, setReferenciaAbierta] = useState<TerminoGlosario | null>(null);
-  const [localMessages, setLocalMessages] = useState<{role: 'system' | 'user' | 'ai', content: string}[]>([]);
+  const [localMessages, setLocalMessages] = useState<{role: 'user' | 'ai', content: string, speaker?: string}[]>([]);
 
   const capituloActual = CHAPTER_NODES.find(c => c.id === selectedChapterId);
 
@@ -27,13 +27,16 @@ export default function PhilosophyChatApp() {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    setLocalMessages(prev => [...prev, { role: 'user', content: inputValue }]);
+    const nuevoMensajeUsuario = inputValue;
+    setLocalMessages(prev => [...prev, { role: 'user', content: nuevoMensajeUsuario, speaker: 'Tus Argumentos (Estudiante)' }]);
     setInputValue('');
 
+    // Simulando réplica del filósofo / ágora
     setTimeout(() => {
       setLocalMessages(prev => [...prev, { 
         role: 'ai', 
-        content: `Resulta intrigante tu argumento. Sin embargo, recordando tu reflexión inicial ("...${chapterReflection?.substring(0, 50) || ''}..."), ¿cómo sostienes esta nueva postura frente a las ideas presentadas por los filósofos en el texto? ¿No crees que hay una contradicción?` 
+        content: `Resulta intrigante tu argumento. Sin embargo, recordando tu reflexión inicial ("...${chapterReflection?.substring(0, 50) || ''}..."), ¿cómo sostienes esta nueva postura frente a las ideas presentadas por los filósofos en el texto? ¿No crees que hay una contradicción?`,
+        speaker: 'Filósofo / Contraparte'
       }]);
     }, 1200);
   };
@@ -130,31 +133,39 @@ export default function PhilosophyChatApp() {
                   </div>
                 </div>
               ) : (
-                <div className="max-w-3xl mx-auto flex flex-col h-full animate-fade-in-up">
-                  <div className="flex-1 space-y-8 pb-32">
-                    {localMessages.length === 0 && (
-                      <div className="text-center py-20 opacity-50">
-                        <span className="font-display text-4xl block mb-4">Φ</span>
-                        <p className="font-serif italic text-lg">El Ágora está en silencio. Inicia el debate con tus argumentos.</p>
-                      </div>
-                    )}
-                    
+                /* VISTA DE ÁGORA CON COLUMNAS SEPARADAS PARA CADA DEBATIENTE */
+                <div className="max-w-5xl mx-auto flex flex-col h-full animate-fade-in-up">
+                  <div className="text-center mb-8">
+                    <span className="font-display text-3xl text-crimson block mb-2">Φ El Ágora: Columna de Debatientes</span>
+                    <p className="font-serif italic text-stone-600 text-sm">Tus argumentos se contraponen directamente frente a la perspectiva filosófica.</p>
+                  </div>
+
+                  {localMessages.length === 0 && (
+                    <div className="text-center py-20 opacity-50">
+                      <span className="font-display text-4xl block mb-4">🏛️</span>
+                      <p className="font-serif italic text-lg">El Ágora está en silencio. Inicia el debate con tus argumentos.</p>
+                    </div>
+                  )}
+                  
+                  {/* Contenedor en columnas paralelas para el debate */}
+                  <div className="flex-1 space-y-6 pb-32">
                     {localMessages.map((msg, i) => (
-                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {msg.role === 'user' ? (
-                          <div className="max-w-xl bg-white border border-stone-300 text-ink px-8 py-5 rounded-sm shadow-md font-sans font-light">
+                      <div 
+                        key={i} 
+                        className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`w-full md:w-3/4 p-6 rounded-sm shadow-md border ${
+                          msg.role === 'user' 
+                            ? 'bg-white border-stone-300 ml-auto text-right' 
+                            : 'bg-parchment/95 border-l-4 border-crimson mr-auto text-left'
+                        }`}>
+                          <span className="block font-sans text-xs font-bold tracking-widest uppercase text-crimson mb-2">
+                            {msg.speaker}
+                          </span>
+                          <p className="font-serif text-lg leading-relaxed text-ink">
                             {msg.content}
-                          </div>
-                        ) : (
-                          <div className="max-w-2xl bg-parchment/95 border-l-4 border-crimson pl-8 pr-6 py-6 relative shadow-md rounded-r-sm">
-                            <div className="absolute -left-3 top-6 w-6 h-6 rounded-sm border border-stone-400 text-stone-500 flex items-center justify-center bg-parchment-dark shadow-sm">
-                              <span className="font-display text-xs italic">Φ</span>
-                            </div>
-                            <p className="font-serif text-xl leading-loose text-ink">
-                              {msg.content}
-                            </p>
-                          </div>
-                        )}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
