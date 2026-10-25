@@ -1,8 +1,6 @@
 interface LectorVozProps {
   texto: string;
 }
-
-
 export default function LectorVoz({ texto }: LectorVozProps) {
   const leerTexto = () => {
     if (!('speechSynthesis' in window)) {
