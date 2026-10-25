@@ -19,7 +19,22 @@ export default function PhilosophyChatApp() {
   const [showChat, setShowChat] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [referenciaAbierta, setReferenciaAbierta] = useState<TerminoGlosario | null>(null);
-  const [localMessages, setLocalMessages] = useState<{role: 'user' | 'ai', content: string, speaker?: string}[]>([]);
+  
+  // Inicializamos los mensajes con la propuesta del estudiante y la primera réplica del filósofo de forma segura
+  const [localMessages, setLocalMessages] = useState<{role: 'user' | 'ai', content: string, speaker?: string}[]>(() => {
+    return [
+      {
+        role: 'user',
+        content: chapterReflection || "Sin reflexión inicial registrada.",
+        speaker: 'Tu Propuesta Inicial (Estudiante)'
+      },
+      {
+        role: 'ai',
+        content: `He analizado tu postura inicial. Desde la perspectiva de los textos y el reto planteado, ¿cómo fundamentas esta idea ante las objeciones de la tradición filosófica?`,
+        speaker: 'Filósofo / Contraparte'
+      }
+    ];
+  });
 
   const capituloActual = CHAPTER_NODES.find(c => c.id === selectedChapterId);
 
@@ -28,21 +43,32 @@ export default function PhilosophyChatApp() {
     if (!inputValue.trim()) return;
 
     const nuevoMensajeUsuario = inputValue;
-    setLocalMessages(prev => [...prev, { role: 'user', content: nuevoMensajeUsuario, speaker: 'Tus Argumentos (Estudiante)' }]);
+    setLocalMessages(prev => [...prev, { role: 'user', content: nuevoMensajeUsuario, speaker: 'Tu Réplica (Estudiante)' }]);
     setInputValue('');
 
     // Simulando réplica del filósofo / ágora
     setTimeout(() => {
       setLocalMessages(prev => [...prev, { 
         role: 'ai', 
-        content: `Resulta intrigante tu argumento. Sin embargo, recordando tu reflexión inicial ("...${chapterReflection?.substring(0, 50) || ''}..."), ¿cómo sostienes esta nueva postura frente a las ideas presentadas por los filósofos en el texto? ¿No crees que hay una contradicción?`,
+        content: `Tu nueva argumentación matiza tu postura inicial, pero surge una tensión evidente frente al problema central. ¿Acaso no estás omitiendo las consecuencias de tu premisa?`,
         speaker: 'Filósofo / Contraparte'
       }]);
     }, 1200);
   };
 
   const handleVolverAlIndice = () => {
-    setLocalMessages([]);
+    setLocalMessages([
+      {
+        role: 'user',
+        content: chapterReflection || "Sin reflexión inicial registrada.",
+        speaker: 'Tu Propuesta Inicial (Estudiante)'
+      },
+      {
+        role: 'ai',
+        content: `He analizado tu postura inicial. Desde la perspectiva de los textos y el reto planteado, ¿cómo fundamentas esta idea ante las objeciones de la tradición filosófica?`,
+        speaker: 'Filósofo / Contraparte'
+      }
+    ]);
     setShowChat(false);
     resetFlow();
   };
@@ -133,21 +159,13 @@ export default function PhilosophyChatApp() {
                   </div>
                 </div>
               ) : (
-                /* VISTA DE ÁGORA CON COLUMNAS SEPARADAS PARA CADA DEBATIENTE */
+                /* ÁGORA CON COLUMNAS PARA CADA DEBATIENTE */
                 <div className="max-w-5xl mx-auto flex flex-col h-full animate-fade-in-up">
                   <div className="text-center mb-8">
-                    <span className="font-display text-3xl text-crimson block mb-2">Φ El Ágora: Columna de Debatientes</span>
-                    <p className="font-serif italic text-stone-600 text-sm">Tus argumentos se contraponen directamente frente a la perspectiva filosófica.</p>
+                    <span className="font-display text-3xl text-crimson block mb-2">Φ El Ágora: Debate Abierto</span>
+                    <p className="font-serif italic text-stone-600 text-sm">La discusión parte de tu propuesta inicial y se contrasta en columnas.</p>
                   </div>
-
-                  {localMessages.length === 0 && (
-                    <div className="text-center py-20 opacity-50">
-                      <span className="font-display text-4xl block mb-4">🏛️</span>
-                      <p className="font-serif italic text-lg">El Ágora está en silencio. Inicia el debate con tus argumentos.</p>
-                    </div>
-                  )}
                   
-                  {/* Contenedor en columnas paralelas para el debate */}
                   <div className="flex-1 space-y-6 pb-32">
                     {localMessages.map((msg, i) => (
                       <div 
@@ -181,7 +199,7 @@ export default function PhilosophyChatApp() {
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Redacta tu argumento aquí..."
+                    placeholder="Escribe tu réplica o argumento..."
                     className="w-full relative bg-white border border-stone-300 rounded-sm pl-8 pr-24 py-5 font-serif italic text-lg text-ink focus:outline-none focus:ring-1 focus:ring-crimson transition-all shadow-sm"
                   />
                   <button 
